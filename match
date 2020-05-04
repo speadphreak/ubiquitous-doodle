@@ -1,0 +1,45 @@
+#
+#
+#
+
+from __future__ import absolute_import, division, print_function, \
+    unicode_literals
+
+from os import environ
+from os.path import dirname, join
+from six import text_type
+from unittest import TestCase
+
+from octodns.record import Record
+from octodns.manager import _AggregateTarget, MainThreadExecutor, Manager, \
+    ManagerException
+from octodns.yaml import safe_load
+from octodns.zone import Zone
+
+from helpers import DynamicProvider, GeoProvider, NoSshFpProvider, \
+    SimpleProvider, TemporaryDirectory
+
+config_dir = join(dirname(__file__), 'config')
+
+
+def get_config_filename(which):
+    return join(config_dir, which)
+
+
+class TestManager(TestCase):
+
+    def test_missing_provider_class(self):
+        with self.assertRaises(ManagerException) as ctx:
+            Manager(get_config_filename('missing-provider-class.yaml')).sync()
+        self.assertTrue('missing class' in text_type(ctx.exception))
+
+    def test_bad_provider_class(self):
+        with self.assertRaises(ManagerException) as ctx:
+            Manager(get_config_filename('bad-provider-class.yaml')).sync()
+        self.assertTrue('Unknown provider class' in text_type(ctx.exception))
+
+    def test_bad_provider_class_module(self):
+        with self.assertRaises(ManagerException) as ctx:
+            Manager(get_config_filename('bad-provider-class-module.yaml')) \
+                .sync()
+        self.assertTrue('Unknown provider class' in text_type(ctx.exception))
